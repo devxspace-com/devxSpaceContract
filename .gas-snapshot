@@ -1,0 +1,5 @@
+DevXspaceTest:testHireAcceptReject() (gas: 178369)
+DevXspaceTest:testPaymentWithETH() (gas: 394162)
+DevXspaceTest:testPaymentWithToken() (gas: 460319)
+DevXspaceTest:testViewmoderation() (gas: 403482)
+DevXspaceTest:testcreateGig() (gas: 153538)
