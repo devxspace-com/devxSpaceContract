@@ -1,18 +1,21 @@
 import os
-from flask import Flask, request, jsonify, send_from_directory, make_response, render_template
+from flask import Flask, request, jsonify, send_from_directory, make_response, render_template, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from sqlalchemy import Interval, Numeric
 from datetime import timedelta
+from flask_login import UserMixin, login_user, LoginManager
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
+import hashlib
 
 app = Flask(__name__)
 CORS(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://Iamsuperman:devxspace@Iamsuperman.mysql.pythonanywhere-services.com/Iamsuperman$devxspace'
 
+# login = LoginManager(app)
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 if not os.path.exists(UPLOAD_FOLDER):
@@ -51,11 +54,12 @@ class Service(db.Model):
     def __repr__(self):
         return f"Name: {self.name}, Image: {self.image_file}"
 
-class Agent(db.Model):
+class Agent(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     address = db.Column(db.String(42), nullable=False, unique=True)
     avatar = db.Column(db.String(255), nullable=True)
     username = db.Column(db.String(20), nullable=True, unique=True)
+    password = db.Column(db.String(255), nullable=True)
     superAgent = db.Column(db.Boolean, default=False)
 
     def __repr__(self):
@@ -172,49 +176,6 @@ admin.add_view(AgentView(Agent, db.session))
 # @app.route('/admin_', methods=['GET', 'POST'])
 # def admin_route():
 #     return admin_()
-
-
-
-
-@app.route('/add_agent', methods=['POST'])
-def add_agent():
-    username = request.form.get('username')
-    agent_address = request.form.get('agent_address')
-    avatar = request.files.get('avatar')
-    superuser = request.form.get('superuser')
-
-    agent = Agent.query.filter_by(address=agent_address).first()
-
-    authorized = Agent.query.filter_by(address=superuser, superAgent=True)
-    if not authorized:
-        return jsonify({'error': "you don't have permission to do this"})
-
-    if agent:
-        return jsonify({'error': 'agent already exists'}), 409
-
-    existing_user = Agent.query.filter_by(username=username).first()
-
-    if existing_user:
-        return jsonify({'error': 'Username already exists'}), 409
-
-    if not avatar:
-        return jsonify({'error': 'avatar not present'}), 401
-
-    filename = None
-    if avatar:
-        filename = secure_filename(avatar.filename)
-        avatar_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        avatar.save(avatar_path)
-        avatar_url = f'/uploads/{filename}'
-
-    new_agent = Agent(address=agent_address, avatar=avatar_url, username=username)
-    db.session.add(new_agent)
-    db.session.commit()
-
-    return jsonify({'success': 'agent added successfully', 'avatar': avatar_url})
-
-
-
 
 
 
@@ -789,6 +750,140 @@ def list_services():
             }
         })
     return jsonify(result), 200
+
+
+
+
+
+
+
+
+
+
+
+
+# AGENT VIEWS
+
+@app.route('/add_agent', methods=['POST'])
+def add_agent():
+    username = request.form.get('username')
+    agent_address = request.form.get('agent_address')
+    avatar = request.files.get('avatar')
+    superuser_address = request.form.get('superuser_address')
+
+
+    superuser = Agent.query.filter_by(address=superuser_address, superAgent=True).first()
+    if not superuser:
+        return jsonify({'error': "you don't have permission to do this"}), 401
+
+    agent = Agent.query.filter_by(address=agent_address).first()
+    if agent:
+        return jsonify({'error': 'agent address already exists'}), 409
+
+    existing_user = Agent.query.filter_by(username=username).first()
+    if existing_user:
+        return jsonify({'error': 'Username already exists'}), 409
+
+    if not avatar:
+        return jsonify({'error': 'avatar not present'}), 401
+
+    filename = None
+    if avatar:
+        filename = secure_filename(avatar.filename)
+        avatar_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        avatar.save(avatar_path)
+        avatar_url = f'/uploads/{filename}'
+
+    new_agent = Agent(address=agent_address, avatar=avatar_url, username=username)
+    db.session.add(new_agent)
+    db.session.commit()
+
+    return jsonify({'success': 'agent added successfully', 'avatar': avatar_url})
+
+
+@app.route('/agent_tasks/<address>', methods=['GET'])
+def agent_tasks(address):
+    tasks = Task.query.filter_by(agent_address=address).all()
+    result = []
+    for task in tasks:
+        user = User.query.filter_by(address=task.buyer_address).first()
+        developer = User.query.filter_by(address=task.developer_address).first()
+        result.append({
+            'id': task.id,
+            'title': task.title,
+            'description': task.description,
+            'price': str(task.price),
+            'finalized': task.finalized,
+            'accepted': task.accepted,
+            'completed': task.completed,
+            'rejected': task.rejected,
+            'paid': task.paid,
+            'abort': task.abort,
+            'canceled': task.canceled,
+            'ongoing': task.ongoing,
+            'deadline': str(task.deadline),
+            'buyer': {
+                'address': user.address,
+                'username': user.username,
+                'avatar': user.avatar
+            },
+            'developer': {
+                'address': developer.address,
+                'username': developer.username,
+                'avatar': developer.avatar
+            }
+        })
+    return jsonify(result), 200
+
+
+@app.route('/agent/dashboard/<address>', methods=['GET'])
+def agent_dashboard(address):
+    if not address:
+        return jsonify({'message': 'agent address empty'}), 401
+    agent = Agent.query.filter_by(address=address)
+
+    if not agent:
+        return jsonify({'message': 'not an agent'})
+
+    tasks = Task.query.all()
+
+    result = []
+    for task in tasks:
+        user = User.query.filter_by(address=task.buyer_address).first()
+        developer = User.query.filter_by(address=task.developer_address).first()
+        result.append({
+            'id': task.id,
+            'title': task.title,
+            'description': task.description,
+            'price': str(task.price),
+            'finalized': task.finalized,
+            'accepted': task.accepted,
+            'completed': task.completed,
+            'rejected': task.rejected,
+            'paid': task.paid,
+            'abort': task.abort,
+            'canceled': task.canceled,
+            'ongoing': task.ongoing,
+            'deadline': str(task.deadline),
+            'buyer': {
+                'address': user.address,
+                'username': user.username,
+                'avatar': user.avatar
+            },
+            'developer': {
+                'address': developer.address,
+                'username': developer.username,
+                'avatar': developer.avatar
+            }
+        })
+
+    return jsonify(result)
+
+
+
+
+
+
 
 
 
