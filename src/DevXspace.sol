@@ -108,7 +108,7 @@ constructor(address _agents, uint _nonce,  uint96 _feePercent,
         new_seller.skills = _skills;
     }
 
-    function createGig(uint _price, string memory _about, string memory _image_uri) public {
+    function createGig(uint _price, string memory _about, string memory _image_uri) public returns(uint gig_id){
        SellerDetails storage seller = Seller[msg.sender];
        uint id = GigId;
        require(seller.seller_address !=address(0), "not a seller");
@@ -118,6 +118,7 @@ constructor(address _agents, uint _nonce,  uint96 _feePercent,
        new_gig.image_uri = _image_uri;
        new_gig.price = _price;
        seller.gigid.push(id);
+       gig_id = id;
        GigId +=1;
     }
 
@@ -158,7 +159,7 @@ constructor(address _agents, uint _nonce,  uint96 _feePercent,
 
 function getTasksForBuyer(address _buyer) public view returns (Tasks[] memory) {
     Buyerdetails storage buyer = Buyer[_buyer];
-
+require(buyer.buyer_address != address(0), "not a buyer");
     uint numTasks = buyer.tasks_id.length;
     Tasks[] memory allTasks = new Tasks[](numTasks);
 
@@ -171,37 +172,45 @@ function getTasksForBuyer(address _buyer) public view returns (Tasks[] memory) {
     return allTasks;
 }
 
-
-   function hire(
+function hire(
     string memory _description, string memory _title,
-     address _developer, uint _deadline, uint _price)
-    public {
+    address _developer, uint _deadline, uint _price
+) public returns(uint _id) {
     Buyerdetails storage buyer = Buyer[msg.sender];
-    TaskId +=1;
-    uint id = TaskId;
     require(buyer.buyer_address != address(0), "not a buyer");
-    Tasks storage new_task =  buyer.task[id];
     SellerDetails storage hired_seller = Seller[_developer];
     require(hired_seller.seller_address != address(0), "not a seller");
+
+    TaskId += 1;
+    uint id = TaskId;
+
+    Tasks storage new_task = buyer.task[id];
     new_task.description = _description;
     new_task.title = _title;
     new_task.price = _price;
     new_task.deadline = _deadline;
     new_task.developer_address = _developer;
     new_task.buyer_address = msg.sender;
+
+    hired_seller.task[id] = new_task;
     hired_seller.tasks_id.push(id);
+    buyer.task[id] = new_task;
     buyer.tasks_id.push(id);
+
+    _id = id;
+
     // uint agent_id = getRandomAgent();
     // address randomAgent = agents[agent_id];
     // new_task.agent_address = randomAgent;
     // payWithEth(_developer, randomAgent);
-
 }
 
+
     function AcceptTask(uint task_id)public {
-        // SellerDetails storage seller = Seller[msg.sender]
-        Tasks storage target_task = Seller[msg.sender].task[task_id];
-        require(target_task.developer_address == msg.sender, "you don't own this task");
+        SellerDetails storage seller = Seller[msg.sender];
+        require(seller.seller_address !=address(0), "zero address");
+        Tasks storage target_task = seller.task[task_id];
+        require(target_task.developer_address!=address(0), "you don't own this task");
         require(target_task.aborted != true);
         require(target_task.accepted !=true, "task accepted previously");
 
@@ -211,7 +220,7 @@ function getTasksForBuyer(address _buyer) public view returns (Tasks[] memory) {
 
     function RejectTask(uint task_id)public {
         Tasks storage target_task = Seller[msg.sender].task[task_id];
-        require(target_task.developer_address == msg.sender, "you don't own this task");
+        require(target_task.developer_address != address(0), "you don't own this task");
         require(target_task.aborted != true);
         require(target_task.accepted !=true, "task accepted previously");
 
