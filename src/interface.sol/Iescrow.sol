@@ -39,10 +39,10 @@ interface IEscrowByAgent {
     uint256 _amount
   ) external returns (uint256);
 
-  function depositByETH(
-    address _recipient,
-    address _agent
-  ) external payable returns (uint256);
+  // function depositByETH(
+  //   address _recipient,
+  //   address _agent
+  // ) external payable returns (uint256);
 
   function release(uint256 _poolId) external returns (bool);
 

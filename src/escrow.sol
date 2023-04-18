@@ -50,17 +50,17 @@ contract EscrowByAgentV2 is Ownable, ReentrancyGuard, IEscrowByAgent {
         cancelLockTime = _cancelLockDays * 24 * 3600;
     }
 
-    function depositByETH(
-        address _recipient,
-        address _agent
-    ) external payable override returns (uint256) {
-        require(msg.value > 0, "amount invalid");
-        require(
-            _recipient != address(0x0) && _agent != address(0x0),
-            "address invalid"
-        );
-        return _deposit(address(0x0), msg.sender, _recipient, _agent, msg.value);
-    }
+    // function depositByETH(
+    //     address _recipient,
+    //     address _agent
+    // )  payable override returns (uint256) {
+    //     require(msg.value > 0, "amount invalid");
+    //     require(
+    //         _recipient != address(0x0) && _agent != address(0x0),
+    //         "address invalid"
+    //     );
+    //     return _deposit(address(0x0), msg.sender, _recipient, _agent, msg.value);
+    // }
 
     function deposit(
         IERC20 _token,
