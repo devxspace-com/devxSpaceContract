@@ -27,7 +27,7 @@ contract DevXspaceTest is Test {
 
     function testcreateBuyerProfile() public{
         vm.startPrank(buyer);
-        devxspace.createBuyerProfile(buyer);
+        devxspace.createBuyerProfile(buyer, "superman", "https:superman.jpg");
         vm.stopPrank();             
     }
 
@@ -38,7 +38,7 @@ contract DevXspaceTest is Test {
     for (uint i = 0; i < skills.length; i++) {
         dynamicSkills[i] = skills[i];
     }
-    devxspace.createSellerProfile(seller, dynamicSkills);
+    devxspace.createSellerProfile(seller, dynamicSkills, "superman", "https:superman.jpg");
     vm.stopPrank();             
 }
 

@@ -1,10 +1,10 @@
 ## DXCOIN Contract
 
-- https://sepolia.etherscan.io/address/0x35992bc387298d7cd327c040e4f9c4ccc57e8c11
+-  https://sepolia.etherscan.io/address/0x251f12eb6e4e2b5892701273017dee380a81c74e
 
 ## DevxSpace Contract
 
-- https://sepolia.etherscan.io/address/0x36ee5f5ecf8efea0982998a9b69f06a5ae62c46f
+-  https://sepolia.etherscan.io/address/0x3d265c9942ceb2a0cbc1bfa0ad4a2cffc12f1f7d
 <br><br>
 <br><br>
 <br><br>
