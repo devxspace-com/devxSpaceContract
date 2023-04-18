@@ -50,6 +50,8 @@ contract DevXspace is EscrowByAgentV2 {
     struct SellerDetails {
         address seller_address;
         string[] skills;
+        string username;
+        string avatar_url;
         mapping (uint => Gigs) gig;
         mapping (uint => Tasks) task;
         uint[] gigid;
@@ -59,6 +61,8 @@ contract DevXspace is EscrowByAgentV2 {
     uint256 GigId;
     struct Buyerdetails{
         address buyer_address;
+        string username;
+        string avatar_url;
         mapping (uint => Tasks) task;
         uint[] tasks_id;
     }
@@ -95,17 +99,21 @@ constructor(address _agents, uint _nonce,  uint96 _feePercent,
     ETHusdpriceFeed = AggregatorV3Interface(0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419);
 }
 
-    function createBuyerProfile(address _address) public{
+    function createBuyerProfile(address _address, string memory _username, string memory _avatar) public{
         require(_address !=address(0), "address zero");
         Buyerdetails storage new_buyer = Buyer[_address];
         new_buyer.buyer_address = _address;
+        new_buyer.username = _username;
+        new_buyer.avatar_url = _avatar;
     }
 
-     function createSellerProfile(address _address, string[] memory _skills) public{
+     function createSellerProfile(address _address, string[] memory _skills, string memory _username, string memory _avatar) public{
         require(_address !=address(0), "address zero");
         SellerDetails storage new_seller = Seller[_address];
         new_seller.seller_address = _address;
         new_seller.skills = _skills;
+        new_seller.username = _username;
+        new_seller.avatar_url = _avatar;
     }
 
     function createGig(uint _price, string memory _about, string memory _image_uri) public returns(uint gig_id){
