@@ -5,7 +5,7 @@ import "../lib/forge-std/src/Script.sol";
 import "../src/DXcoin.sol";
 import "../src/DevXspace.sol";
 
-contract RewardScript is Script {
+contract devxdeploy is Script {
     DevXspace devxspace;
     DXcoin dxtoken;
 
