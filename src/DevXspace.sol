@@ -278,8 +278,9 @@ function hire(
     }
 
 
-    function payWithEth(address _recipient, uint task_id) public payable returns(uint pool_id) {
+    function payWithEth(address _recipient, uint task_id) public payable returns(uint _pool_id) {
         SellerDetails storage seller = Seller[_recipient];
+        Buyerdetails storage buyer = Buyer[msg.sender];
         Tasks storage task = seller.task[task_id];
         require(task.accepted==true, "task not accepted yet");
         require(task.developer_address == _recipient, "invalid recipient");
@@ -288,13 +289,15 @@ function hire(
         uint price = task.price;
         require(msg.value==price, "not enough ether");
         task.ongoing=true;
+        buyer.task[task_id].ongoing = true;
         // depositByETH{value: msg.value}(_recipient, _agent);
         uint agent_id = getRandomAgent();
         address _agent = agents[agent_id];
-        pool_id = _deposit(address(0x0), msg.sender, _recipient, _agent, msg.value);
-        AgentTorelease[agents[agent_id]].selected[pool_id] = true;
-        AgentTorelease[agents[agent_id]].moderations.push(pool_id);
-        emit Deposit(msg.sender, _recipient, agents[agent_id], pool_id);
+        _pool_id = _deposit(address(0x0), msg.sender, _recipient, _agent, msg.value);
+        buyer.task[task_id].pool_id = _pool_id;
+        AgentTorelease[agents[agent_id]].selected[_pool_id] = true;
+        AgentTorelease[agents[agent_id]].moderations.push(_pool_id);
+        emit Deposit(msg.sender, _recipient, agents[agent_id], _pool_id);
     }
 
     function payWithToken(IERC20 _token, address _recipient, uint task_id) public returns(uint pool_id)  {

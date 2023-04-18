@@ -3,5 +3,6 @@ src = 'src'
 out = 'out'
 libs = ['lib']
 verbosity = 5
-
+[rpc_endpoints]
+mainnet = "${rpc}"
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config

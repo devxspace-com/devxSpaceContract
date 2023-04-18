@@ -9,7 +9,7 @@ import "lib/openzeppelin-contracts/contracts/access/AccessControlEnumerable.sol"
 import "lib/openzeppelin-contracts/contracts/utils/Context.sol";
 
 
-contract TokenERC20 is Context, AccessControlEnumerable, ERC20Burnable, ERC20Pausable {
+contract DXcoin is Context, AccessControlEnumerable, ERC20Burnable, ERC20Pausable {
     
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");

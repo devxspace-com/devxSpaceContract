@@ -8,7 +8,7 @@ import "../src/escrow.sol";
 
 contract DevXspaceTest is Test {
     DevXspace devxspace;
-    TokenERC20 devxcoin;
+    DXcoin devxcoin;
     EscrowByAgentV2 escrow;
     address buyer = mkaddr("buyer");
     address seller = mkaddr("seller");
@@ -18,7 +18,7 @@ contract DevXspaceTest is Test {
 
     function setUp() public {
         vm.startPrank(agent);
-       devxcoin = new TokenERC20("DXcoin", "DXC");
+       devxcoin = new DXcoin("DXcoin", "DXC");
        escrow = new EscrowByAgentV2(500, 500, 2);
        devxspace = new DevXspace(agent, 1, 25, 5, 0);
        devxcoin.mint(agent, 5 ether);  
@@ -169,14 +169,16 @@ function testRejectSubmission() public{
         devxspace.release(0);
     }
 
-    // function testApproveCancel() public {
-    //     testpayWithEth();
-    //     // vm.warp(3 days);
-    //     vm.prank(buyer);
-    //     devxspace.cancel(0);
-    //     vm.prank(agent);
-    //     escrow.approveCancel(0);
-    // }
+    function testApproveCancel() public {
+        testpayWithEth();
+        vm.warp(3 days);
+        vm.prank(buyer);
+        devxspace.approveCancel(0);
+        vm.prank(seller);
+        devxspace.approveCancel(0);
+        vm.prank(agent);
+        devxspace.approveCancel(0);
+    }
 
 
    function mkaddr(string memory name) public returns (address) {
