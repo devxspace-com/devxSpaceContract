@@ -210,11 +210,12 @@ function hire(
         SellerDetails storage seller = Seller[msg.sender];
         require(seller.seller_address !=address(0), "zero address");
         Tasks storage target_task = seller.task[task_id];
-        require(target_task.developer_address!=address(0), "you don't own this task");
+        require(target_task.developer_address !=address(0), "task does not exist");
+        require(target_task.developer_address ==msg.sender, "not task owner");
         require(target_task.aborted != true);
         require(target_task.accepted !=true, "task accepted previously");
-
-        target_task.rejected = true;
+        Buyer[target_task.buyer_address].task[task_id].accepted = true;
+        target_task.accepted = true;
 
     }
 
@@ -223,7 +224,7 @@ function hire(
         require(target_task.developer_address != address(0), "you don't own this task");
         require(target_task.aborted != true);
         require(target_task.accepted !=true, "task accepted previously");
-
+        Buyer[target_task.buyer_address].task[task_id].rejected = true;
         target_task.rejected = true;
 
     }
@@ -233,8 +234,8 @@ function hire(
         require(target_task.developer_address == msg.sender, "you don't own this task");
         require(target_task.aborted != true, "task already aborted");
         require(target_task.ongoing==true, "task not started");
-        require(target_task.accepted =true);
-
+        require(target_task.accepted==true);
+        Buyer[target_task.buyer_address].task[task_id].aborted = true;
         target_task.aborted = true;
 
     }
@@ -243,30 +244,36 @@ function hire(
     function SubmitTask(uint task_id) public{
         Tasks storage target_task = Seller[msg.sender].task[task_id];
         require(target_task.ongoing, "not an ongoing task");
-        require(target_task.accepted, "task not accepted");
+        require(target_task.developer_address==msg.sender, "not your task");
+        require(target_task.accepted==true, "task not accepted");
+        Buyer[target_task.buyer_address].task[task_id].completed = true;
+        Buyer[target_task.buyer_address].task[task_id].submitted = true;
         target_task.completed = true;
+        target_task.submitted = true;
     }
     function AcceptSubmission(uint task_id)public {
-        Tasks storage target_task = Seller[msg.sender].task[task_id];
+        Tasks storage target_task = Buyer[msg.sender].task[task_id];
         require(target_task.buyer_address == msg.sender, "you don't own this task");
         require(target_task.aborted != true, "task aborted");
-        require(target_task.accepted==true);
+        require(target_task.submitted==true, "task not submitted");
         require(target_task.completed == true, "task yet to be submitted");
-
+        Seller[target_task.developer_address].task[task_id].finalized = true;
+        Seller[target_task.developer_address].task[task_id].accept_submission = true;
         target_task.finalized = true;
         target_task.accept_submission = true;
 
     }
 
-    function RejectSubmission(uint _pool_id)public {
-        Tasks storage target_task = Seller[msg.sender].task[_pool_id];
+     function RejectSubmission(uint task_id)public {
+        Tasks storage target_task = Buyer[msg.sender].task[task_id];
         require(target_task.buyer_address == msg.sender, "you don't own this task");
         require(target_task.aborted != true, "task aborted");
-        require(target_task.accepted==true);
+        require(target_task.submitted==true, "task not submitted");
         require(target_task.completed == true, "task yet to be submitted");
-
+        Seller[target_task.developer_address].task[task_id].finalized = false;
+        Seller[target_task.developer_address].task[task_id].reject_submission = true;
         target_task.finalized = false;
-        target_task.reject_submission = true;
+        target_task.accept_submission = true;
 
     }
 
@@ -277,6 +284,10 @@ function hire(
         require(task.accepted==true, "task not accepted yet");
         require(task.developer_address == _recipient, "invalid recipient");
         require(task.buyer_address != address(0), "task unavailable");
+        require(task.buyer_address== msg.sender, "not task owner");
+        uint price = task.price;
+        require(msg.value==price, "not enough ether");
+        task.ongoing=true;
         // depositByETH{value: msg.value}(_recipient, _agent);
         uint agent_id = getRandomAgent();
         address _agent = agents[agent_id];
@@ -287,20 +298,23 @@ function hire(
     }
 
     function payWithToken(IERC20 _token, address _recipient, uint task_id) public returns(uint pool_id)  {
-        SellerDetails storage seller = Seller[_recipient];
-        Tasks storage task = seller.task[task_id];
-        require(task.accepted==true, "task not accepted yet");
-        require(task.developer_address == _recipient, "invalid recipient");
-        require(task.buyer_address != address(0), "task unavailable");
-        uint agentIndex = getRandomAgent();
-        uint ethusdCurrentPrice = getETHUSDPrice();
-        uint _amountToken = (task.price * ethusdCurrentPrice);
-         _token.transferFrom(msg.sender, address(this), _amountToken);
-         _token.approve(address(this), _amountToken);
-        pool_id = _deposit(address(_token), msg.sender, _recipient, agents[agentIndex], _amountToken);
-        AgentTorelease[agents[agentIndex]].selected[pool_id] = true;
-        emit Deposit(msg.sender, _recipient, agents[agentIndex], pool_id);
-    }
+    SellerDetails storage seller = Seller[_recipient];
+    Tasks storage task = seller.task[task_id];
+    require(task.accepted==true, "task not accepted yet");
+    require(task.developer_address == _recipient, "invalid recipient");
+    require(task.buyer_address != address(0), "task unavailable");
+    uint agentIndex = getRandomAgent();
+    uint ethusdCurrentPrice = getETHUSDPrice();
+    uint _amountToken = (task.price * ethusdCurrentPrice);
+    _token.transferFrom(msg.sender, address(this), _amountToken);
+    _token.approve(agents[agentIndex], _amountToken);
+    require(_token.balanceOf(msg.sender) >= _amountToken, "balance not enough");
+    require(_token.allowance(msg.sender, address(this)) >= _amountToken, "allowance not enough");
+    pool_id = _deposit(address(_token), msg.sender, _recipient, agents[agentIndex], _amountToken);
+    AgentTorelease[agents[agentIndex]].selected[pool_id] = true;
+    emit Deposit(msg.sender, _recipient, agents[agentIndex], pool_id);
+}
+
 
     function getRandomAgent() internal returns (uint) {
         uint index = uint(keccak256(abi.encodePacked(nonce, block.timestamp, block.coinbase))) % agents.length;

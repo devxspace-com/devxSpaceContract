@@ -69,65 +69,114 @@ function testhire() public returns(uint id){
     vm.stopPrank();
 }
 
+// function testgetTasksForBuyer() public{
+//     testhire();
+//     devxspace.getTasksForBuyer(buyer);
+
+// }
+
+// function testgetTasksForSeller() public{
+//     testhire();
+//     devxspace.getTasksForSeller(seller);
+
+// }
 function testAcceptTask() public {
     testhire();
     vm.startPrank(seller);
-    devxspace.getTasksForBuyer(buyer);
-    devxspace.getTasksForSeller(seller);
     devxspace.AcceptTask(1);
     vm.stopPrank();
+    devxspace.getTasksForSeller(seller);
+    devxspace.getTasksForBuyer(buyer);
+    
+}
+
+function testpayWithEth() public {
+    testAcceptTask();
+    vm.startPrank(buyer);
+    vm.deal(buyer, 100 ether);
+    devxspace.payWithEth{value: 1 ether}(seller, 1);
+    vm.stopPrank();
+}
+
+// function testpayWithToken() public {
+//     testAcceptTask();
+//     vm.startPrank(buyer);
+//     vm.deal(buyer, 100 ether);
+//     devxcoin.approve(address(devxspace), 1 ether);
+//     address token = address(devxspace);
+//     devxspace.payWithToken(IERC20(token), seller, 1);
+//     vm.stopPrank();
+// }
+function testRejectTask() public{
+    testhire();
+    vm.startPrank(seller);
+    devxspace.RejectTask(1);
+    vm.stopPrank();
+}
+
+function testAbortTask() public {
+    testhire();
+    testpayWithEth();
+    vm.startPrank(seller);
+    devxspace.AbortTask(1);
+    vm.stopPrank();
+}
+
+function testSubmitTask() public{
+    testpayWithEth();
+    vm.startPrank(seller);
+    devxspace.SubmitTask(1);
+    vm.stopPrank();
+}
+function testAcceptSubmission() public{
+        testpayWithEth();
+        vm.prank(seller);
+        devxspace.SubmitTask(1);
+        devxspace.getTasksForBuyer(buyer);
+        vm.startPrank(buyer);
+        devxspace.AcceptSubmission(1);
+        vm.stopPrank();
+}
+
+function testRejectSubmission() public{
+        testpayWithEth();
+        vm.prank(seller);
+        devxspace.SubmitTask(1);
+        devxspace.getTasksForBuyer(buyer);
+        vm.startPrank(buyer);
+        devxspace.RejectSubmission(1);
+        vm.stopPrank();
 }
 
 
 
-//     function testHireAcceptReject() public {
-//         testcreateGig();
-//         vm.prank(0x2e767b4A3416Ef16458355EFAcec7d3228Cec08C);
-//         devxspace.hire(0);
-//         vm.startPrank(0x7a5863fe6A65377A7cd3F2A6d417F489D9DCF353);
-//         devxspace.viewOffer(0);
-//         devxspace.AcceptOrReject(0, 1);
-//         vm.stopPrank();
-//     }
 
-//     function testPaymentWithETH() public {
-//         testHireAcceptReject();
-//         vm.prank(0x2e767b4A3416Ef16458355EFAcec7d3228Cec08C);
-//         vm.deal(0x2e767b4A3416Ef16458355EFAcec7d3228Cec08C, 50 ether);
-//         devxspace.payWithEth{value: 1 ether}(0x7a5863fe6A65377A7cd3F2A6d417F489D9DCF353, 0);
-//     }
 
-//     // function testPaymentWithToken() public {
-//     //     testHireAcceptReject();
-//     //     vm.startPrank(0x2e767b4A3416Ef16458355EFAcec7d3228Cec08C);
-//     //     devxcoin.approve(address(devxspace), 5 ether);
-//     //     devxspace.payWithToken(IERC20(devxcoin),0x7a5863fe6A65377A7cd3F2A6d417F489D9DCF353, 0);
-//     //     console.log(devxcoin.balanceOf(address(devxspace)));
-//     //     vm.stopPrank();
-//     // }
 
-//     // function testRelease() public {
-//     //     testPaymentWithETH();
-//     //     vm.prank(0x9B69F998b2a2b20FF54a575Bd5fB90A5D71656C1);
-//     //     escrow.release(0);
-//     // }
 
-//     function testApproveCancel() public {
-//         testPaymentWithETH();
-//         vm.warp(3 days);
-//         vm.prank(0x2e767b4A3416Ef16458355EFAcec7d3228Cec08C);
-//         devxspace.approveCancel(0);
-//         vm.prank(0x7a5863fe6A65377A7cd3F2A6d417F489D9DCF353);
-//         escrow.approveCancel(0);
-//         vm.prank(0x9B69F998b2a2b20FF54a575Bd5fB90A5D71656C1);
-//         escrow.approveCancel(0);
-//     }
+    // function testPaymentWithToken() public {
+    //     testAcceptTask();
+    //     vm.startPrank(buyer);
+    //     devxcoin.approve(address(devxspace), 5 ether);
+    //     devxspace.payWithToken(IERC20(devxcoin),seller, 1);
+    //     console.log(devxcoin.balanceOf(address(devxspace)));
+    //     vm.stopPrank();
+    // }
 
-//     function testCancel() public {
-//         testApproveCancel();
-//         vm.prank(0x2e767b4A3416Ef16458355EFAcec7d3228Cec08C);
-//         devxspace.buyerCancel(0);
-//     }
+    function testRelease() public {
+        testpayWithEth();
+        vm.prank(agent);
+        devxspace.release(0);
+    }
+
+    // function testApproveCancel() public {
+    //     testpayWithEth();
+    //     // vm.warp(3 days);
+    //     vm.prank(buyer);
+    //     devxspace.cancel(0);
+    //     vm.prank(agent);
+    //     escrow.approveCancel(0);
+    // }
 
 
    function mkaddr(string memory name) public returns (address) {
