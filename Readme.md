@@ -4,7 +4,7 @@
 
 ## DevxSpace Contract
 
--  https://sepolia.etherscan.io/address/0x3d265c9942ceb2a0cbc1bfa0ad4a2cffc12f1f7d
+-  https://sepolia.etherscan.io/address/0x75c5C6E08C2Cd06C7fB6a484a1d7C8d6901d4B65
 <br><br>
 <br><br>
 <br><br>
